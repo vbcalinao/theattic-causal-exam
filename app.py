@@ -1,18 +1,23 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from transformers import pipeline
+import requests
 
 class Item(BaseModel):
     text: str
 
 app = FastAPI()
 
-instruct_model = pipeline('text2text-generation', model='mistralai/Mistral-7B-Instruct-v0.2')
+API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
+headers = {"Authorization": "Bearer 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"}
+
+def query(payload):
+    response = requests.post(API_URL, headers=headers, json=payload)
+    return response.json()
 
 @app.post("/generate")
 def generate(item: Item):
     try:
-        result = instruct_model(item.text)
-        return {"generated_text": result[0]['generated_text']}
+        result = query({"inputs": item.text})
+        return {"generated_text": result['generated_text']}
     except Exception as e:
         return {"error": str(e)}
